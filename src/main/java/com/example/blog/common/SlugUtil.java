@@ -5,8 +5,12 @@ import java.util.Locale;
 
 public class SlugUtil {
     public static String toSlug(String input) {
+        if (input == null) {
+            return "post";
+        }
+
         String normalized = Normalizer.normalize(input, Normalizer.Form.NFD)
-                .replaceAll("[^\p{ASCII}]", "");
+                .replaceAll("[^\\p{ASCII}]", "");
         String slug = normalized
                 .toLowerCase(Locale.ENGLISH)
                 .replaceAll("[^a-z0-9]+", "-")
