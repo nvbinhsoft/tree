@@ -1,0 +1,874 @@
+openapi: 3.0.3
+info:
+  title: Personal Blog API
+  version: 1.0.0
+  description: >
+    Simple personal blog API for a SWE-focused, code-heavy blog.
+    Public endpoints for reading posts; admin endpoints for managing content.
+servers:
+  - url: http://localhost:8080/api
+    description: Local dev
+tags:
+  - name: Public Posts
+  - name: Tags
+  - name: Settings
+  - name: Auth
+  - name: Admin Posts
+  - name: Admin Tags
+  - name: Admin Settings
+  - name: Uploads
+paths:
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Login and obtain JWT access token
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /posts:
+    get:
+      tags: [Public Posts]
+      summary: List published posts
+      description: >
+        Returns paginated list of posts. Returns only PUBLISHED posts for public consumption.
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+          description: Zero-based page index
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+          description: Page size
+        - in: query
+          name: tag
+          schema:
+            type: string
+          description: Filter by tag slug
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Full-text search query (title/body)
+        - in: query
+          name: sort
+          schema:
+            type: string
+            enum: [publishedAtDesc, publishedAtAsc]
+            default: publishedAtDesc
+          description: Sort order
+      responses:
+        '200':
+          description: Paginated list of posts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePostSummary'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /posts/{slug}:
+    get:
+      tags: [Public Posts]
+      summary: Get a single published post by slug
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+          description: URL slug of the post
+      responses:
+        '200':
+          description: Post detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostDetail'
+        '404':
+          description: Post not found or not published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /tags:
+    get:
+      tags: [Tags]
+      summary: List all tags
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /settings/public:
+    get:
+      tags: [Settings]
+      summary: Get public blog settings
+      responses:
+        '200':
+          description: Public blog settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PublicSettings'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/posts:
+    get:
+      tags: [Admin Posts]
+      summary: List posts for admin (includes drafts and published)
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+        - in: query
+          name: size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/PostStatus'
+          description: Filter by post status
+        - in: query
+          name: q
+          schema:
+            type: string
+          description: Search by title/body
+      responses:
+        '200':
+          description: Paginated list of posts (admin view)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PagePostAdminSummary'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Admin Posts]
+      summary: Create a new post
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostCreateRequest'
+      responses:
+        '201':
+          description: Post created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAdminDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/posts/{id}:
+    get:
+      tags: [Admin Posts]
+      summary: Get post detail for admin
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Post detail (admin view)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAdminDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Admin Posts]
+      summary: Update an existing post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PostUpdateRequest'
+      responses:
+        '200':
+          description: Post updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAdminDetail'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Admin Posts]
+      summary: Delete a post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Post deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/posts/{id}/publish:
+    post:
+      tags: [Admin Posts]
+      summary: Publish a post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Post published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAdminDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/posts/{id}/unpublish:
+    post:
+      tags: [Admin Posts]
+      summary: Unpublish a post
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Post unpublished
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostAdminDetail'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Post not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/tags:
+    get:
+      tags: [Admin Tags]
+      summary: List tags (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of tags
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Tag'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags: [Admin Tags]
+      summary: Create a new tag
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagCreateRequest'
+      responses:
+        '201':
+          description: Tag created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/tags/{id}:
+    put:
+      tags: [Admin Tags]
+      summary: Update a tag
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TagUpdateRequest'
+      responses:
+        '200':
+          description: Tag updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Tag'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Tag not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Admin Tags]
+      summary: Delete a tag
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: integer
+      responses:
+        '204':
+          description: Tag deleted
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Tag not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/settings:
+    get:
+      tags: [Admin Settings]
+      summary: Get blog settings (admin)
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Blog settings (admin view)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSettings'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags: [Admin Settings]
+      summary: Update blog settings
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminSettingsUpdateRequest'
+      responses:
+        '200':
+          description: Updated blog settings
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminSettings'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /admin/uploads:
+    post:
+      tags: [Uploads]
+      summary: Upload an image and get a public URL
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                  description: Image file to upload
+      responses:
+        '200':
+          description: File uploaded
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UploadResponse'
+        '400':
+          description: Invalid file
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username:
+          type: string
+          example: admin
+        password:
+          type: string
+          format: password
+          example: secret123
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        tokenType:
+          type: string
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Expiration time in seconds
+    PostStatus:
+      type: string
+      enum: [DRAFT, PUBLISHED]
+    Tag:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+          example: Spring Boot
+        slug:
+          type: string
+          example: spring-boot
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TagCreateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Spring Boot
+    TagUpdateRequest:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          example: Spring Boot
+    PostSummary:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+          example: understanding-spring-boot-filters
+        title:
+          type: string
+        excerpt:
+          type: string
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        coverImageUrl:
+          type: string
+          nullable: true
+        readTimeMinutes:
+          type: integer
+          example: 7
+        publishedAt:
+          type: string
+          format: date-time
+    PostAdminSummary:
+      allOf:
+        - $ref: '#/components/schemas/PostSummary'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/PostStatus'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    PostDetail:
+      type: object
+      properties:
+        id:
+          type: integer
+        slug:
+          type: string
+        title:
+          type: string
+        excerpt:
+          type: string
+        body:
+          type: string
+          description: Markdown content
+        tags:
+          type: array
+          items:
+            $ref: '#/components/schemas/Tag'
+        coverImageUrl:
+          type: string
+          nullable: true
+        readTimeMinutes:
+          type: integer
+        publishedAt:
+          type: string
+          format: date-time
+    PostAdminDetail:
+      allOf:
+        - $ref: '#/components/schemas/PostDetail'
+        - type: object
+          properties:
+            status:
+              $ref: '#/components/schemas/PostStatus'
+            createdAt:
+              type: string
+              format: date-time
+            updatedAt:
+              type: string
+              format: date-time
+    PostCreateRequest:
+      type: object
+      required: [title, body, status]
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+          nullable: true
+          description: Optional. If omitted, backend generates slug from title.
+        excerpt:
+          type: string
+          nullable: true
+        body:
+          type: string
+          description: Markdown content
+        status:
+          $ref: '#/components/schemas/PostStatus'
+        tagIds:
+          type: array
+          items:
+            type: integer
+        coverImageUrl:
+          type: string
+          nullable: true
+    PostUpdateRequest:
+      type: object
+      required: [title, body, status]
+      properties:
+        title:
+          type: string
+        slug:
+          type: string
+          nullable: true
+        excerpt:
+          type: string
+          nullable: true
+        body:
+          type: string
+          description: Markdown content
+        status:
+          $ref: '#/components/schemas/PostStatus'
+        tagIds:
+          type: array
+          items:
+            type: integer
+        coverImageUrl:
+          type: string
+          nullable: true
+    PagePostSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+    PagePostAdminSummary:
+      type: object
+      properties:
+        content:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostAdminSummary'
+        page:
+          type: integer
+        size:
+          type: integer
+        totalElements:
+          type: integer
+        totalPages:
+          type: integer
+        last:
+          type: boolean
+    PublicSettings:
+      type: object
+      properties:
+        blogTitle:
+          type: string
+        blogSubtitle:
+          type: string
+        authorName:
+          type: string
+        authorBio:
+          type: string
+        profileImageUrl:
+          type: string
+        socialGithub:
+          type: string
+        socialLinkedin:
+          type: string
+        socialX:
+          type: string
+    AdminSettings:
+      allOf:
+        - $ref: '#/components/schemas/PublicSettings'
+        - type: object
+          properties:
+            id:
+              type: integer
+    AdminSettingsUpdateRequest:
+      allOf:
+        - $ref: '#/components/schemas/PublicSettings'
+    UploadResponse:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: Optional internal identifier of the upload
+        url:
+          type: string
+          description: Public URL to the uploaded file
+        fileName:
+          type: string
+        size:
+          type: integer
+          description: File size in bytes
+    ErrorResponse:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+        error:
+          type: string
+        message:
+          type: string
+        path:
+          type: string
