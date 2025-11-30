@@ -14,10 +14,7 @@ import org.springframework.context.annotation.Configuration;
                 title = "Personal Blog API",
                 version = "1.0.0",
                 description = "Public endpoints for posts/tags/settings and JWT-protected admin endpoints."
-        ),
-        servers = {
-                @Server(url = "/", description = "Base API path")
-        }
+        )
 )
 @SecurityScheme(
         name = "bearerAuth",
