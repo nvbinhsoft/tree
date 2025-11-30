@@ -7,12 +7,15 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.UUID;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
 public class FileStorageService {
+    private static final Logger log = LoggerFactory.getLogger(FileStorageService.class);
 
     @Value("${app.upload.base-dir}")
     private String baseDir;
@@ -26,6 +29,7 @@ public class FileStorageService {
         Path target = targetDir.resolve(filename);
         Files.copy(file.getInputStream(), target, StandardCopyOption.REPLACE_EXISTING);
         String url = String.format("/assets/posts/%d/%02d/%s", today.getYear(), today.getMonthValue(), filename);
+        log.info("Stored upload originalName='{}', savedAs='{}', size={} bytes", file.getOriginalFilename(), target, file.getSize());
         return new StoredFile(url, filename, file.getSize());
     }
 

@@ -5,6 +5,8 @@ import com.example.blog.dto.TagResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.security.SecurityRequirement;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import jakarta.validation.Valid;
 import java.util.List;
 import org.springframework.http.ResponseEntity;
@@ -16,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 @Tag(name = "Admin Tags")
 @SecurityRequirement(name = "bearerAuth")
 public class TagAdminController {
+    private static final Logger log = LoggerFactory.getLogger(TagAdminController.class);
     private final TagService tagService;
 
     public TagAdminController(TagService tagService) {
@@ -26,6 +29,7 @@ public class TagAdminController {
     @GetMapping
     @Operation(summary = "List all tags (admin)")
     public List<TagResponse> list() {
+        log.info("GET /api/admin/tags");
         return tagService.listAll();
     }
 
@@ -33,6 +37,7 @@ public class TagAdminController {
     @PostMapping
     @Operation(summary = "Create a tag")
     public ResponseEntity<TagResponse> create(@Valid @RequestBody TagRequest request) {
+        log.info("POST /api/admin/tags name='{}'", request.getName());
         return ResponseEntity.ok(tagService.create(request));
     }
 
@@ -40,6 +45,7 @@ public class TagAdminController {
     @PutMapping("/{id}")
     @Operation(summary = "Update a tag")
     public TagResponse update(@PathVariable Long id, @Valid @RequestBody TagRequest request) {
+        log.info("PUT /api/admin/tags/{} name='{}'", id, request.getName());
         return tagService.update(id, request);
     }
 
@@ -47,6 +53,7 @@ public class TagAdminController {
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete a tag")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
+        log.info("DELETE /api/admin/tags/{}", id);
         tagService.delete(id);
         return ResponseEntity.noContent().build();
     }
