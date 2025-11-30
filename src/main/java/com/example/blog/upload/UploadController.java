@@ -2,6 +2,9 @@ package com.example.blog.upload;
 
 import com.example.blog.dto.UploadResponse;
 import java.io.IOException;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.security.SecurityRequirement;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -12,6 +15,8 @@ import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/api/admin/uploads")
+@Tag(name = "Uploads")
+@SecurityRequirement(name = "bearerAuth")
 public class UploadController {
 
     private final FileStorageService storageService;
@@ -22,6 +27,7 @@ public class UploadController {
 
     @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
+    @Operation(summary = "Upload an image", description = "Accepts multipart/form-data with field 'file'")
     public ResponseEntity<UploadResponse> upload(@RequestParam("file") MultipartFile file) throws IOException {
         StoredFile stored = storageService.store(file);
         // This demo does not persist uploads, so id is not tracked.

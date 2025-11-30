@@ -2,6 +2,8 @@ package com.example.blog.auth;
 
 import com.example.blog.dto.LoginRequest;
 import com.example.blog.dto.LoginResponse;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 @RestController
 @RequestMapping("/api/auth")
+@Tag(name = "Auth")
 public class AuthController {
 
     private final AuthenticationManager authenticationManager;
@@ -26,6 +29,7 @@ public class AuthController {
     }
 
     @PostMapping("/login")
+    @Operation(summary = "Login and receive a JWT access token")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
