@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springdoc.core.annotations.ParameterObject;
 
 @RestController
-@RequestMapping("/api/admin/posts")
+@RequestMapping("/admin/posts")
 @Tag(name = "Admin Posts")
 @SecurityRequirement(name = "bearerAuth")
 public class PostAdminController {

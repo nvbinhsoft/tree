@@ -16,7 +16,7 @@ import org.springframework.context.annotation.Configuration;
                 description = "Public endpoints for posts/tags/settings and JWT-protected admin endpoints."
         ),
         servers = {
-                @Server(url = "/api", description = "Base API path")
+                @Server(url = "/", description = "Base API path")
         }
 )
 @SecurityScheme(

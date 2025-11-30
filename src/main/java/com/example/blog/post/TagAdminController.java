@@ -14,7 +14,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/api/admin/tags")
+@RequestMapping("/admin/tags")
 @Tag(name = "Admin Tags")
 @SecurityRequirement(name = "bearerAuth")
 public class TagAdminController {
