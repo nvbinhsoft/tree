@@ -1,6 +1,6 @@
 server:
   servlet:
-    context-path: /api
+    context-path: /
 
 spring:
   datasource:
@@ -35,6 +35,10 @@ app:
     expiration: 3600 # seconds
   upload:
     base-dir: uploads/
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+      - http://localhost:5174
 
 springdoc:
   api-docs:
