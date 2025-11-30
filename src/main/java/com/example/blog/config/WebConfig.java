@@ -12,7 +12,8 @@ public class WebConfig implements WebMvcConfigurer {
     @Value("${app.upload.base-dir}")
     private String uploadDir;
 
-    @Value("${app.cors.allowed-origins:*}")
+    // Comma-separated list; defaults to common dev origins instead of '*' to allow credentials safely.
+    @Value("${app.cors.allowed-origins:http://localhost:5173,http://localhost:5174}")
     private String[] allowedOrigins;
 
     @Override
