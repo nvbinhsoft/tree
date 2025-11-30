@@ -19,6 +19,7 @@ import org.springframework.web.server.ResponseStatusException;
 import org.springframework.http.HttpStatus;
 
 @Service
+@Transactional(readOnly = true)
 public class PostService {
     private static final Logger log = LoggerFactory.getLogger(PostService.class);
     private final PostRepository postRepository;
@@ -30,7 +31,8 @@ public class PostService {
     }
 
     public Page<PostSummaryResponse> listPublished(String query, Pageable pageable) {
-        log.debug("Listing published posts: query='{}', page={}, size={}", query, pageable.getPageNumber(), pageable.getPageSize());
+        log.debug("Listing published posts: query='{}', page={}, size={}", query, pageable.getPageNumber(),
+                pageable.getPageSize());
         return postRepository.searchPublished(query, pageable).map(this::toSummaryDto);
     }
 
@@ -43,7 +45,8 @@ public class PostService {
     }
 
     public Page<PostSummaryResponse> listAdmin(PostStatus status, String query, Pageable pageable) {
-        log.debug("Listing admin posts: status={}, query='{}', page={}, size={}", status, query, pageable.getPageNumber(), pageable.getPageSize());
+        log.debug("Listing admin posts: status={}, query='{}', page={}, size={}", status, query,
+                pageable.getPageNumber(), pageable.getPageSize());
         return postRepository.searchAdmin(status, query, pageable).map(this::toDetailDto);
     }
 
@@ -110,7 +113,8 @@ public class PostService {
     }
 
     private void applyRequest(Post post, PostRequest request) {
-        log.debug("Applying request for post id={}, incoming slug={}, tagIds={}", post.getId(), request.getSlug(), request.getTagIds());
+        log.debug("Applying request for post id={}, incoming slug={}, tagIds={}", post.getId(), request.getSlug(),
+                request.getTagIds());
         post.setTitle(request.getTitle());
         post.setExcerpt(request.getExcerpt());
         post.setBody(request.getBody());
@@ -170,7 +174,7 @@ public class PostService {
                 .map(t -> new TagResponse(t.getId(), t.getName(), t.getSlug()))
                 .toList();
         return new PostSummaryResponse(post.getId(), post.getSlug(), post.getTitle(), post.getExcerpt(),
-                post.getPublishedAt(), post.getCoverImageUrl(), post.getReadTimeMinutes(), tags);
+                post.getPublishedAt(), post.getCoverImageUrl(), post.getReadTimeMinutes(), tags, post.getStatus());
     }
 
     private PostDetailResponse toDetailDto(Post post) {

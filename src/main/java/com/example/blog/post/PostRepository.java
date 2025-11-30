@@ -14,9 +14,9 @@ public interface PostRepository extends JpaRepository<Post, Long> {
     @Query("select p from Post p where p.status = com.example.blog.post.PostStatus.PUBLISHED order by p.publishedAt desc")
     Page<Post> findPublished(Pageable pageable);
 
-    @Query("select p from Post p where (:status is null or p.status = :status) and (:query is null or lower(p.title) like lower(concat('%', :query, '%')) or lower(p.body) like lower(concat('%', :query, '%'))) order by p.updatedAt desc")
+    @Query(value = "select * from posts p where (cast(:#{#status?.name()} as varchar) is null or p.status = cast(:#{#status?.name()} as varchar)) and (cast(:query as varchar) is null or lower(p.title) like lower(concat('%', cast(:query as varchar), '%')) or lower(p.body) like lower(concat('%', cast(:query as varchar), '%'))) order by p.updated_at desc", countQuery = "select count(*) from posts p where (cast(:#{#status?.name()} as varchar) is null or p.status = cast(:#{#status?.name()} as varchar)) and (cast(:query as varchar) is null or lower(p.title) like lower(concat('%', cast(:query as varchar), '%')) or lower(p.body) like lower(concat('%', cast(:query as varchar), '%')))", nativeQuery = true)
     Page<Post> searchAdmin(@Param("status") PostStatus status, @Param("query") String query, Pageable pageable);
 
-    @Query("select p from Post p where p.status = com.example.blog.post.PostStatus.PUBLISHED and (:query is null or lower(p.title) like lower(concat('%', :query, '%')) or lower(p.body) like lower(concat('%', :query, '%'))) order by p.publishedAt desc")
+    @Query(value = "select * from posts p where p.status = 'PUBLISHED' and (cast(:query as varchar) is null or lower(p.title) like lower(concat('%', cast(:query as varchar), '%')) or lower(p.body) like lower(concat('%', cast(:query as varchar), '%'))) order by p.published_at desc", countQuery = "select count(*) from posts p where p.status = 'PUBLISHED' and (cast(:query as varchar) is null or lower(p.title) like lower(concat('%', cast(:query as varchar), '%')) or lower(p.body) like lower(concat('%', cast(:query as varchar), '%')))", nativeQuery = true)
     Page<Post> searchPublished(@Param("query") String query, Pageable pageable);
 }

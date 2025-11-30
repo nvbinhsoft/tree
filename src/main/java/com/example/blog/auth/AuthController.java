@@ -25,7 +25,7 @@ public class AuthController {
     private static final Logger log = LoggerFactory.getLogger(AuthController.class);
     private final AuthenticationManager authenticationManager;
     private final JwtTokenProvider jwtTokenProvider;
-    
+
     public AuthController(AuthenticationManager authenticationManager, JwtTokenProvider jwtTokenProvider) {
         this.authenticationManager = authenticationManager;
         this.jwtTokenProvider = jwtTokenProvider;
@@ -34,12 +34,12 @@ public class AuthController {
     @PostMapping("/login")
     @Operation(summary = "Login and receive a JWT access token")
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
-        log.info("Login attempt for user={}", request.getUsername());
+        log.info("Login attempt for email={}", request.getEmail());
         Authentication authentication = authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
+                new UsernamePasswordAuthenticationToken(request.getEmail(), request.getPassword()));
         UserDetails principal = (UserDetails) authentication.getPrincipal();
-        String role = principal.getAuthorities().stream().findFirst().map(a -> a.getAuthority().replace("ROLE_", "")).orElse("ADMIN");
+        String role = principal.getAuthorities().stream().findFirst().map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("ADMIN");
         String token = jwtTokenProvider.generateToken(principal.getUsername(), role);
         log.info("Login successful for user={}, role={}", principal.getUsername(), role);
         return ResponseEntity.ok(new LoginResponse(token, jwtTokenProvider.getExpirationSeconds()));
