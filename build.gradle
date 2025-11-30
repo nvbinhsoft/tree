@@ -10,6 +10,7 @@ buildscript {
 
 plugins {
     id 'java'
+    id 'org.flywaydb.flyway' version '9.22.3'
 }
 
 apply plugin: 'org.springframework.boot'
@@ -22,6 +23,13 @@ targetCompatibility = '17'
 
 repositories {
     mavenCentral()
+}
+
+flyway {
+    url = System.getenv("SPRING_DATASOURCE_URL") ?: "jdbc:postgresql://localhost:5433/blog"
+    user = System.getenv("SPRING_DATASOURCE_USERNAME") ?: "user"
+    password = System.getenv("SPRING_DATASOURCE_PASSWORD") ?: "password"
+    locations = ["classpath:db/migration"]
 }
 
 dependencies {
